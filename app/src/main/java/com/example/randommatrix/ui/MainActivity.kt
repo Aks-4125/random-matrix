@@ -2,6 +2,7 @@ package com.example.randommatrix.ui
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -28,8 +29,11 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
         return Unit // not required as of now
     }
 
+    private var persist: Boolean = false
+    private var SPINNER_POS = 3;
     private val mList = mutableListOf<MatrixModel>()
     private val mUniqueNumbers = mutableListOf<Int>()
+    lateinit var mainPresenter: MainPresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,10 +45,13 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
         spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vSpinner.adapter = spinnerArrayAdapter
 
+        mainPresenter = MainPresenter()
+
+
         val matrixAdapter = MatrixAdapter(mList);
         rvMatrix.adapter = matrixAdapter
         matrixAdapter.onItemClick = { mAdapterList ->
-
+            mainPresenter.persistData(mAdapterList)
         }
 
         vSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -54,31 +61,33 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
                 position: Int,
                 id: Long
             ) {
-                mList.clear()
-                mUniqueNumbers.clear()
                 val size = spinnerArray[position].toInt();
                 val gridLayout =
                     GridLayoutManager(this@MainActivity, size)
                 rvMatrix.layoutManager = gridLayout
 
+                if (!persist) {
+                    mList.clear()
+                    mUniqueNumbers.clear()
 
-                for (i in 1..size * size) {
-                    val mItem = MatrixModel();
-                    val num = (1..99).random();
-                    val mExistingItem = Observable.just(mUniqueNumbers)
-                        .contains(num)
-                        .blockingGet()
-                    mExistingItem?.let {
-                        val unqNum = (1..99).random()
-                        mItem.number = unqNum
-                        mUniqueNumbers.add(unqNum)
+                    for (i in 1..size * size) {
+                        val mItem = MatrixModel();
+                        val num = (1..99).random();
+                        val mExistingItem = Observable.just(mUniqueNumbers)
+                            .contains(num)
+                            .blockingGet()
+                        mExistingItem?.let {
+                            val unqNum = (1..99).random()
+                            mItem.number = unqNum
+                            mUniqueNumbers.add(unqNum)
+                        }
+                        mUniqueNumbers.add(num)
+                        mItem.pos = size
+                        mList.add(mItem)
                     }
-                    mUniqueNumbers.add(num)
-
-                    mList.add(mItem)
                 }
                 matrixAdapter.notifyDataSetChanged()
-
+                persist = false
             } // to close the onItemSelected
 
             override fun onNothingSelected(parent: AdapterView<*>) {
@@ -86,8 +95,15 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
             }
         }
 
-        vSpinner.setSelection(3)
+        val dataList = mainPresenter.fetchData()
+        if (!dataList.isEmpty()) {
+            mList.addAll(dataList)
+            Log.d(LOGGER, "retrieved from database")
+            mList[0].pos?.let { SPINNER_POS = spinnerArrayAdapter.getPosition(it.toString()) }
+            persist = true;
+        }
 
+        vSpinner.setSelection(SPINNER_POS)
 
         btnGenerate.setOnClickListener {
             Observable.fromIterable(mList)
@@ -109,7 +125,9 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
                     t.color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
                     return@any true
                 }.blockingGet()
+            mainPresenter.persistData(mList)
             rvMatrix.adapter!!.notifyDataSetChanged()
+            Log.d(LOGGER, "list updated")
         }
 
     }

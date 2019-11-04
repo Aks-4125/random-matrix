@@ -4,12 +4,13 @@ import com.example.randommatrix.MatrixModel
 
 interface MainContractor {
 
-    public interface IMainView {
-       public abstract fun updateMatrix(mutableList: MutableList<MatrixModel>) : Any
+    interface IMainView {
+        fun updateMatrix(mutableList: MutableList<MatrixModel>): Any
     }
 
     interface IMainPresenter {
-        public abstract  fun persistData(mutableList: MutableList<MatrixModel>) : Any
+        fun persistData(matrixList: MutableList<MatrixModel>): Any
+        fun fetchData(): MutableList<MatrixModel>
     }
 
 }
