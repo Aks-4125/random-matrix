@@ -1,6 +1,5 @@
 package com.example.randommatrix.ui
 
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -11,29 +10,32 @@ import com.example.randommatrix.BaseActivity
 import com.example.randommatrix.MatrixAdapter
 import com.example.randommatrix.MatrixModel
 import com.example.randommatrix.R
-import io.reactivex.BackpressureStrategy
 import io.reactivex.Observable
-import io.reactivex.functions.Predicate
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 
 
 class MainActivity : BaseActivity(), MainContractor.IMainView {
+    override fun updateListItems(
+        matrixList: MutableList<MatrixModel>,
+        mNumbers: MutableList<Int>
+    ) {
+        mList =  matrixList
+        mUniqueNumbers = mNumbers
+    }
+
     override fun layoutId(): Int {
         return R.layout.activity_main
     }
 
-    override fun updateMatrix(mutableList: MutableList<MatrixModel>): Any {
-
-
-        return Unit // not required as of now
+    override fun updateMatrix() {
+        rvMatrix.adapter!!.notifyDataSetChanged()
     }
 
-    private var persist: Boolean = false
-    private var SPINNER_POS = 3;
-    private val mList = mutableListOf<MatrixModel>()
-    private val mUniqueNumbers = mutableListOf<Int>()
-    lateinit var mainPresenter: MainPresenter
+    private var isPersist: Boolean = false
+    private var mSelectedPos = 3;
+    private var mList = mutableListOf<MatrixModel>()
+    private var mUniqueNumbers = mutableListOf<Int>()
+    private lateinit var mPresenter: MainPresenter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,13 +47,13 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
         spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vSpinner.adapter = spinnerArrayAdapter
 
-        mainPresenter = MainPresenter()
+        mPresenter = MainPresenter(this)
 
 
         val matrixAdapter = MatrixAdapter(mList);
         rvMatrix.adapter = matrixAdapter
         matrixAdapter.onItemClick = { mAdapterList ->
-            mainPresenter.persistData(mAdapterList)
+            mPresenter.persistData(mAdapterList)
         }
 
         vSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -66,7 +68,7 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
                     GridLayoutManager(this@MainActivity, size)
                 rvMatrix.layoutManager = gridLayout
 
-                if (!persist) {
+                if (!isPersist) {
                     mList.clear()
                     mUniqueNumbers.clear()
 
@@ -87,7 +89,7 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
                     }
                 }
                 matrixAdapter.notifyDataSetChanged()
-                persist = false
+                isPersist = false
             } // to close the onItemSelected
 
             override fun onNothingSelected(parent: AdapterView<*>) {
@@ -95,38 +97,18 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
             }
         }
 
-        val dataList = mainPresenter.fetchData()
+        val dataList = mPresenter.fetchData()
         if (!dataList.isEmpty()) {
             mList.addAll(dataList)
             Log.d(LOGGER, "retrieved from database")
-            mList[0].pos?.let { SPINNER_POS = spinnerArrayAdapter.getPosition(it.toString()) }
-            persist = true;
+            mList[0].pos?.let { mSelectedPos = spinnerArrayAdapter.getPosition(it.toString()) }
+            isPersist = true;
         }
 
-        vSpinner.setSelection(SPINNER_POS)
+        vSpinner.setSelection(mSelectedPos)
 
         btnGenerate.setOnClickListener {
-            Observable.fromIterable(mList)
-                .filter(Predicate { t -> t.color == 0 })
-                .toFlowable(BackpressureStrategy.BUFFER)
-                .any { t ->
-                    val rnd = Random()
-                    val num = (1..99).random()
-                    val mExistingItem = Observable.just(mUniqueNumbers)
-                        .contains(num)
-                        .blockingGet()
-                    mExistingItem?.let {
-                        val unqNum = (1..99).random()
-                        t.number = unqNum
-                        mUniqueNumbers.add(unqNum)
-                    }
-                    mUniqueNumbers.add(num)
-                    t.number = num
-                    t.color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
-                    return@any true
-                }.blockingGet()
-            mainPresenter.persistData(mList)
-            rvMatrix.adapter!!.notifyDataSetChanged()
+            mPresenter.incrementAndRefresh(mList, mUniqueNumbers)
             Log.d(LOGGER, "list updated")
         }
 
