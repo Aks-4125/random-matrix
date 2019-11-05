@@ -6,7 +6,7 @@ interface MainContractor {
 
     interface IMainView {
         fun updateMatrix()
-        fun updateListItems(matrixList: MutableList<MatrixModel>, mUniqueNumbers: MutableList<Int>)
+        fun updateListItems(matrixList: MutableList<MatrixModel>, mNumbers: MutableList<Int>)
     }
 
     interface IMainPresenter {

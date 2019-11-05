@@ -33,7 +33,7 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                 t.number = num
                 t.color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
                 return@any true
-            }.blockingGet()
+            }.subscribe()
 
         view.updateListItems(mList,mNumbers)
         persistData(mList)
