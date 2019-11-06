@@ -10,6 +10,7 @@ import io.reactivex.schedulers.Schedulers
 import io.realm.Realm
 import java.util.*
 
+@Suppress("RedundantSamConstructor")
 class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPresenter {
 
     private var view: MainContractor.IMainView = mView
@@ -21,7 +22,6 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
     /**
      * increment in background thread and update ui on main thread
      */
-    @Suppress("RedundantSamConstructor")
     override fun incrementAndRefresh(mList: MutableList<MatrixModel>, mNumbers: MutableList<Int>) {
         val rnd = Random()
         Observable.fromIterable(mList)
@@ -31,7 +31,8 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                 var num = (1..499).random()
                 val mExistingItem = Observable.fromIterable(mList)
                     .filter(Predicate { t -> t.number == num })
-                    .firstElement().blockingGet()
+                    .firstElement()
+                    .blockingGet()
                 mExistingItem?.let {
                     val unqNum = (500..999).random()
                     num = unqNum
@@ -96,7 +97,8 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                     var num = (1..499).random()
                     val mExistingItem = Observable.fromIterable(mList)
                         .filter(Predicate { t -> t.number == num })
-                        .firstElement().blockingGet()
+                        .firstElement()
+                        .blockingGet()
                     mExistingItem?.let {
                         val unqNum = (500..999).random()
                         num = unqNum
