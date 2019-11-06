@@ -2,8 +2,8 @@ package com.example.randommatrix.ui
 
 import android.graphics.Color
 import android.util.Log
-import com.example.randommatrix.BaseActivity.Companion.LOGGER
-import com.example.randommatrix.MatrixModel
+import com.example.randommatrix.base.BaseActivity.Companion.LOGGER
+import com.example.randommatrix.data.MatrixModel
 import io.reactivex.BackpressureStrategy
 import io.reactivex.Observable
 import io.reactivex.functions.Predicate
@@ -11,10 +11,18 @@ import io.realm.Realm
 import java.util.*
 
 class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPresenter {
-    override fun incrementAndRefresh(
-        mList: MutableList<MatrixModel>,
-        mNumbers: MutableList<Int>
-    ) {
+
+    private var view: MainContractor.IMainView = mView
+
+    init {
+        Log.d(LOGGER, "Presenter initialized")
+    }
+
+    /**
+     * increment and update ui
+     */
+    @Suppress("RedundantSamConstructor")
+    override fun incrementAndRefresh(mList: MutableList<MatrixModel>, mNumbers: MutableList<Int>) {
         Observable.fromIterable(mList)
             .filter(Predicate { t -> t.color == 0 })
             .toFlowable(BackpressureStrategy.BUFFER)
@@ -35,19 +43,21 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                 return@any true
             }.subscribe()
 
-        view.updateListItems(mList,mNumbers)
+        view.updateListItems(mList, mNumbers)
         persistData(mList)
     }
 
-    private var view: MainContractor.IMainView = mView
 
+    /**
+     * fetch items from database
+     */
     override fun fetchData(): MutableList<MatrixModel> {
         Realm.getDefaultInstance().let { realm ->
 
             val isEmpty = realm.where(MatrixModel::class.java).findAll().isEmpty()
-            if (isEmpty) return mutableListOf()
+            return if (isEmpty) mutableListOf()
             else
-                return realm.copyFromRealm(
+                realm.copyFromRealm(
                     realm.where(MatrixModel::class.java)
                         .findAll()
                 )
@@ -55,10 +65,10 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
 
     }
 
-    init {
-        Log.d(LOGGER, "Presenter initialized")
-    }
 
+    /**
+     * insert or update existing record to persist data
+     */
     override fun persistData(matrixList: MutableList<MatrixModel>) {
 
         Realm.getDefaultInstance().let { realm ->

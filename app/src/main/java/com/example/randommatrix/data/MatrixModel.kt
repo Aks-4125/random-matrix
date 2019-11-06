@@ -1,4 +1,4 @@
-package com.example.randommatrix
+package com.example.randommatrix.data
 
 import io.realm.RealmObject
 

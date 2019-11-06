@@ -1,4 +1,4 @@
-package com.example.randommatrix
+package com.example.randommatrix.base
 
 import android.os.Bundle
 import androidx.annotation.LayoutRes

@@ -1,11 +1,13 @@
-package com.example.randommatrix
+package com.example.randommatrix.adapter
 
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.randommatrix.MatrixAdapter.GridHolder
+import com.example.randommatrix.data.MatrixModel
+import com.example.randommatrix.R
+import com.example.randommatrix.adapter.MatrixAdapter.GridHolder
 import kotlinx.android.synthetic.main.item_view.view.*
 import java.util.*
 
