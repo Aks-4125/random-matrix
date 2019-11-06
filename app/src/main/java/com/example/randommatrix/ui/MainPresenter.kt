@@ -4,9 +4,9 @@ import android.graphics.Color
 import android.util.Log
 import com.example.randommatrix.base.BaseActivity.Companion.LOGGER
 import com.example.randommatrix.data.MatrixModel
-import io.reactivex.BackpressureStrategy
 import io.reactivex.Observable
 import io.reactivex.functions.Predicate
+import io.reactivex.schedulers.Schedulers
 import io.realm.Realm
 import java.util.*
 
@@ -19,29 +19,29 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
     }
 
     /**
-     * increment and update ui
+     * increment in background thread and update ui on main thread
      */
     @Suppress("RedundantSamConstructor")
     override fun incrementAndRefresh(mList: MutableList<MatrixModel>, mNumbers: MutableList<Int>) {
+        val rnd = Random()
         Observable.fromIterable(mList)
+            .subscribeOn(Schedulers.io())
             .filter(Predicate { t -> t.color == 0 })
-            .toFlowable(BackpressureStrategy.BUFFER)
-            .any { t ->
-                val rnd = Random()
-                val num = (1..99).random()
-                val mExistingItem = Observable.just(mNumbers)
-                    .contains(num)
-                    .blockingGet()
+            .doOnNext { matrixBlock ->
+                var num = (1..499).random()
+                val mExistingItem = Observable.fromIterable(mList)
+                    .filter(Predicate { t -> t.number == num })
+                    .firstElement().blockingGet()
                 mExistingItem?.let {
-                    val unqNum = (1..99).random()
-                    t.number = unqNum
-                    mNumbers.add(unqNum)
+                    val unqNum = (500..999).random()
+                    num = unqNum
                 }
                 mNumbers.add(num)
-                t.number = num
-                t.color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
-                return@any true
-            }.subscribe()
+                matrixBlock.number = num
+                matrixBlock.color =
+                    Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
+            }
+            .blockingSubscribe()
 
         view.updateListItems(mList, mNumbers)
         persistData(mList)
@@ -77,6 +77,36 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                 transaction.insertOrUpdate(matrixList)
             }
         }
+        view.updateMatrix()
+    }
+
+    /**
+     * populate default matrix with white background
+     */
+    override fun generateDefaultMatrix(
+        mList: MutableList<MatrixModel>,
+        mUniqueNumbers: MutableList<Int>,
+        size: Int
+    ) {
+        Observable.just(mList)
+            .subscribeOn(Schedulers.io())
+            .doOnNext {
+                for (i in 1..size * size) {
+                    val mItem = MatrixModel()
+                    var num = (1..499).random()
+                    val mExistingItem = Observable.fromIterable(mList)
+                        .filter(Predicate { t -> t.number == num })
+                        .firstElement().blockingGet()
+                    mExistingItem?.let {
+                        val unqNum = (500..999).random()
+                        num = unqNum
+                    }
+                    mUniqueNumbers.add(num)
+                    mItem.number = num
+                    mItem.pos = size
+                    mList.add(mItem)
+                }
+            }.blockingSubscribe()
         view.updateMatrix()
     }
 }

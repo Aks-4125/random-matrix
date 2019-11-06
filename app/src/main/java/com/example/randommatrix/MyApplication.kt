@@ -4,6 +4,7 @@ import android.app.Application
 import io.realm.Realm
 import io.realm.RealmConfiguration
 
+@Suppress("unused") // used in manifest.xml as declaration in application tag
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
@@ -12,7 +13,7 @@ class MyApplication : Application() {
         val config =
             RealmConfiguration.Builder()
                 .deleteRealmIfMigrationNeeded()
-                .schemaVersion(3)
+                .schemaVersion(1)
                 .build()
         Realm.setDefaultConfiguration(config)
     }

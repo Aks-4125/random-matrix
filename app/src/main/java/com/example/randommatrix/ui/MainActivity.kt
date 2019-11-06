@@ -10,10 +10,11 @@ import com.example.randommatrix.R
 import com.example.randommatrix.adapter.MatrixAdapter
 import com.example.randommatrix.base.BaseActivity
 import com.example.randommatrix.data.MatrixModel
-import io.reactivex.Observable
 import kotlinx.android.synthetic.main.activity_main.*
 
-
+/**
+ * View interface (no business logic) only user interaction is handled
+ */
 class MainActivity : BaseActivity(), MainContractor.IMainView {
     private lateinit var spinnerArrayAdapter: ArrayAdapter<String>
     private lateinit var spinnerArray: Array<String>
@@ -53,28 +54,12 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
                 val gridLayout =
                     GridLayoutManager(this@MainActivity, size)
                 rvMatrix.layoutManager = gridLayout
+                mUniqueNumbers.clear()
 
                 if (!isPersist) {
                     mList.clear()
-                    mUniqueNumbers.clear()
-
-                    for (i in 1..size * size) {
-                        val mItem = MatrixModel()
-                        val num = (1..99).random()
-                        val mExistingItem = Observable.just(mUniqueNumbers)
-                            .contains(num)
-                            .blockingGet()
-                        mExistingItem?.let {
-                            val unqNum = (1..99).random()
-                            mItem.number = unqNum
-                            mUniqueNumbers.add(unqNum)
-                        }
-                        mUniqueNumbers.add(num)
-                        mItem.pos = size
-                        mList.add(mItem)
-                    }
+                    mPresenter.generateDefaultMatrix(mList, mUniqueNumbers, size)
                 }
-                matrixAdapter.notifyDataSetChanged()
                 isPersist = false
             } // to close the onItemSelected
 
@@ -90,14 +75,11 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
     private fun initializeUI() {
         spinnerArray = arrayOf("2", "3", "4", "5", "6", "7", "8")
         spinnerArrayAdapter =
-            ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, spinnerArray)
+            ArrayAdapter(this, android.R.layout.simple_list_item_1, spinnerArray)
         //selected item will look like a spinner set from XML
         spinnerArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         vSpinner.adapter = spinnerArrayAdapter
-
         mPresenter = MainPresenter(this)
-
-
         matrixAdapter = MatrixAdapter(mList)
         rvMatrix.adapter = matrixAdapter
         matrixAdapter.onItemClick = { mAdapterList ->
@@ -124,6 +106,5 @@ class MainActivity : BaseActivity(), MainContractor.IMainView {
     override fun updateMatrix() {
         rvMatrix.adapter!!.notifyDataSetChanged()
     }
-
 
 }

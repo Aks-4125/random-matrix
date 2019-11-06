@@ -7,7 +7,10 @@ interface MainContractor {
     interface IMainView {
         fun updateMatrix()
 
-        fun updateListItems(matrixList: MutableList<MatrixModel>, mNumbers: MutableList<Int>)
+        fun updateListItems(
+            matrixList: MutableList<MatrixModel>,
+            mNumbers: MutableList<Int>
+        )
     }
 
     interface IMainPresenter {
@@ -15,7 +18,17 @@ interface MainContractor {
 
         fun fetchData(): MutableList<MatrixModel>
 
-        fun incrementAndRefresh(mList: MutableList<MatrixModel>, mNumbers: MutableList<Int>)
+        fun incrementAndRefresh(
+            mList: MutableList<MatrixModel>,
+            mNumbers: MutableList<Int>
+        )
+
+        fun generateDefaultMatrix(
+            mList: MutableList<MatrixModel>,
+            mUniqueNumbers: MutableList<Int>,
+            size: Int
+        )
+
     }
 
 }
