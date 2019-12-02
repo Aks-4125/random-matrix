@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.util.Log
 import com.example.randommatrix.base.BaseActivity.Companion.LOGGER
 import com.example.randommatrix.data.MatrixModel
+import io.reactivex.BackpressureStrategy
 import io.reactivex.Observable
 import io.reactivex.functions.Predicate
 import io.reactivex.schedulers.Schedulers
@@ -27,7 +28,8 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
         Observable.fromIterable(mList)
             .subscribeOn(Schedulers.io())
             .filter(Predicate { t -> t.color == 0 })
-            .doOnNext { matrixBlock ->
+            .toFlowable(BackpressureStrategy.LATEST)
+            .any { matrixBlock ->
                 var num = (1..499).random()
                 val mExistingItem = Observable.fromIterable(mList)
                     .filter(Predicate { t -> t.number == num })
@@ -41,8 +43,9 @@ class MainPresenter(mView: MainContractor.IMainView) : MainContractor.IMainPrese
                 matrixBlock.number = num
                 matrixBlock.color =
                     Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
-            }
-            .blockingSubscribe()
+                return@any true
+            }.subscribe()
+
 
         view.updateListItems(mList, mNumbers)
         persistData(mList)
